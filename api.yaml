@@ -1,0 +1,444 @@
+openapi: 3.0.3
+info:
+  title: Event Management API
+  version: 1.0.0
+  description: API for managing events, notifications, invites, waitlists, and attendance.
+servers:
+  - url: https://api.example.com/v1
+
+paths:
+  /events:
+    get:
+      summary: Get all events
+      responses:
+        "200":
+          description: A list of events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success, failed]
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Event"
+
+    post:
+      summary: Create a new event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Event"
+      responses:
+        "201":
+          description: Event created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success, failed]
+
+  /events/{id}:
+    get:
+      summary: Get an event by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Event details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success, failed]
+                  data:
+                    $ref: "#/components/schemas/Event"
+
+    put:
+      summary: Update an event by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Event"
+      responses:
+        "200":
+          description: Event updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success, failed]
+
+    delete:
+      summary: Delete an event by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Event deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success, failed]
+
+  /notifications:
+    get:
+      summary: Get all notifications
+      responses:
+        "200":
+          description: A list of notifications
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success, failed]
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Notification"
+
+    post:
+      summary: Create a notification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Notification"
+      responses:
+        "201":
+          description: Notification created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success, failed]
+
+  /notifications/{id}:
+    get:
+      summary: Get a notification by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Notification details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success, failed]
+                  data:
+                    $ref: "#/components/schemas/Notification"
+
+    delete:
+      summary: Delete a notification
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Notification deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success, failed]
+
+  /invites:
+    get:
+      summary: Get all invites
+      responses:
+        "200":
+          description: A list of invites
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success, failed]
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Invite"
+
+    post:
+      summary: Send an invite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Invite"
+      responses:
+        "201":
+          description: Invite created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success, failed]
+
+  /invites/{id}:
+    delete:
+      summary: Delete an invite
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Invite deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success, failed]
+
+  /waitlist:
+    get:
+      summary: Get all waitlist entries
+      responses:
+        "200":
+          description: A list of waitlist entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success, failed]
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Waitlist"
+
+    post:
+      summary: Add to waitlist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Waitlist"
+      responses:
+        "201":
+          description: Waitlist entry created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success, failed]
+
+  /attendance:
+    get:
+      summary: Get all attendance records
+      responses:
+        "200":
+          description: A list of attendance records
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success, failed]
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Attendance"
+
+    post:
+      summary: Record event attendance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Attendance"
+      responses:
+        "201":
+          description: Attendance recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success, failed]
+
+components:
+  schemas:
+    Event:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        date:
+          type: string
+          format: date-time
+        locationTitle:
+          type: string
+        location:
+          type: array
+          items:
+            type: number
+        capacity:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        category:
+          type: string
+        organizerID:
+          type: string
+      required:
+        [
+          name,
+          date,
+          locationTitle,
+          location,
+          capacity,
+          createdAt,
+          category,
+          organizerID,
+        ]
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+        userID:
+          type: string
+        eventID:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: [invite, update]
+        createdAt:
+          type: string
+          format: date-time
+      required: [userID, eventID, description, type, createdAt]
+
+    Invite:
+      type: object
+      properties:
+        id:
+          type: string
+        senderID:
+          type: string
+        receiverID:
+          type: string
+        eventID:
+          type: string
+        status:
+          type: string
+          enum: [pending, accepted, declined]
+        createdAt:
+          type: string
+          format: date-time
+      required: [senderID, receiverID, eventID, status, createdAt]
+
+    Waitlist:
+      type: object
+      properties:
+        id:
+          type: string
+        userID:
+          type: string
+        eventID:
+          type: string
+        joinedAt:
+          type: string
+          format: date-time
+      required: [userID, eventID, joinedAt]
+
+    Attendance:
+      type: object
+      properties:
+        userID:
+          type: string
+        eventID:
+          type: string
+        joinedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [attended, missed, cancelled]
+      required: [userID, eventID, joinedAt, status]
