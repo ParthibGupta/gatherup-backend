@@ -1,8 +1,8 @@
 const { EntitySchema } = require("typeorm");
 
-const Waitlist = new EntitySchema({
-  name: "Waitlist",
-  tableName: "waitlist",
+const EventAttendees = new EntitySchema({
+  name: "EventAttendees",
+  tableName: "eventAttendees",
   columns: {
     eventID: {
       type: "uuid",
@@ -12,8 +12,12 @@ const Waitlist = new EntitySchema({
       type: "uuid",
       primary: true,
     },
+    rsvpStatus: {
+      type: "boolean",
+      default: true,
+    },
     createdAt: {
-      type: "timestampz",
+      type: "timestamp with time zone",
       createDate: true,
     },
   },
@@ -25,7 +29,7 @@ const Waitlist = new EntitySchema({
         name: "eventID",
         referencedColumnName: "eventID",
       },
-      inverseSide: "waitlistUsers",
+      inverseSide: "eventAttendees",
     },
     user: {
       type: "many-to-one",
@@ -34,9 +38,9 @@ const Waitlist = new EntitySchema({
         name: "userID",
         referencedColumnName: "userID",
       },
-      inverseSide: "waitlistedEvents",
+      inverseSide: "attendedEvents",
     },
   },
 });
 
-module.exports = { Waitlist };
+module.exports = { EventAttendees };
