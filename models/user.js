@@ -29,11 +29,11 @@ const User = new EntitySchema({
       nullable: true,
     },
     createdAt: {
-      type: "timestampz",
+      type: "timestamp",
       createDate: true,
     },
     updatedAt: {
-      type: "timestampz",
+      type: "timestamp",
       updateDate: true,
     },
   },

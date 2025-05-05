@@ -13,7 +13,7 @@ const Waitlist = new EntitySchema({
       primary: true,
     },
     createdAt: {
-      type: "timestampz",
+      type: "timestamp",
       createDate: true,
     },
   },

@@ -22,11 +22,11 @@ const Notification = new EntitySchema({
       nullable: false,
     },
     createdAt: {
-      type: "timestampz",
+      type: "timestamp",
       createDate: true,
     },
     updatedAt: {
-      type: "timestampz",
+      type: "timestamp",
       updateDate: true,
     },
   },
