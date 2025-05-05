@@ -1,11 +1,21 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const AppDataSource = require("./config/database");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+//Initialize DB connection
+AppDataSource.initialize()
+  .then(() => {
+    console.log("Database connected and tables created successfully!");
+  })
+  .catch((err) => {
+    console.error("Error during database initialization:", err);
+  });
 
 // Routes
 const indexRouter = require("./routes/index");
