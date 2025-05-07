@@ -182,12 +182,14 @@ const deleteMyOrganizedEventByID = async (req, res) => {
 //As a user, I want to view all events so that I can find events to join.
 const getAllEvents = async (req, res) => {
   try {
-    const events = await eventRepository
+    const eventsWithAttendeesNames = await eventRepository
       .createQueryBuilder("event")
+      .leftJoinAndSelect("event.eventAttendees", "eventAttendees")
+      .leftJoinAndSelect("eventAttendees.user", "user.userName")
       .orderBy("event.eventDate", "ASC")
-      .limit(20)
+      .limit(50)
       .getMany();
-    res.status(200).json(events);
+    res.status(200).json({ message: "succeess", eventsWithAttendeesNames });
   } catch (error) {
     console.error("Error fetching events:", error);
     res.status(500).json({
