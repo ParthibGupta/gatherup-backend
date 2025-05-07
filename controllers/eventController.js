@@ -15,26 +15,25 @@ const createEvent = async (req, res) => {
     eventDate,
     locationTitle,
     location,
+    bannerURL,
     capacity,
     category,
-    organizerID,
   } = req.body;
 
   try {
-    const organizer = await userRepository.findOneBy({
-      userID: organizerID,
-    });
-
+    const organizer = req.user.sub;
+    console.log(organizer);
     if (!organizer) {
       return res.status(404).json({ message: "Organizer not found" });
     }
-    
+
     const event = eventRepository.create({
       name,
       description,
       eventDate: new Date(eventDate),
       locationTitle,
       location,
+      bannerURL,
       capacity,
       category,
       organizer,
@@ -65,7 +64,10 @@ const getMyOrganizedEvents = async (req, res) => {
       where: { organizer: { userID } },
       relations: ["organizer"],
     });
-    res.status(200).json(events);
+    res.status(200).json({
+      message: "success",
+      data: events,
+    });
   } catch (error) {
     console.error("Error fetching organized events:", error);
     res.status(500).json({
@@ -182,14 +184,14 @@ const deleteMyOrganizedEventByID = async (req, res) => {
 //As a user, I want to view all events so that I can find events to join.
 const getAllEvents = async (req, res) => {
   try {
-    const eventsWithAttendeesNames = await eventRepository
+    const events = await eventRepository
       .createQueryBuilder("event")
       .leftJoinAndSelect("event.eventAttendees", "eventAttendees")
       .leftJoinAndSelect("eventAttendees.user", "user.userName")
       .orderBy("event.eventDate", "ASC")
       .limit(50)
       .getMany();
-    res.status(200).json({ message: "succeess", eventsWithAttendeesNames });
+    res.status(200).json({ message: "succeess", events });
   } catch (error) {
     console.error("Error fetching events:", error);
     res.status(500).json({
@@ -203,16 +205,36 @@ const getAllEvents = async (req, res) => {
 const getEventByID = async (req, res) => {
   const { eventID } = req.params;
   try {
-    const event = await eventRepository.findOne({
-      where: { eventID },
-      relations: ["organizer"],
-    });
+
+    const event = await eventRepository
+    .createQueryBuilder("event")
+    .leftJoinAndSelect("event.organizer", "organizer")
+    .leftJoinAndSelect("event.eventAttendees", "eventAttendees")
+    .leftJoinAndSelect("eventAttendees.user", "user")
+    .where("event.eventID = :eventID", { eventID })
+    .getOne();
 
     if (!event) {
       return res.status(404).json({ message: "Event not found" });
     }
 
-    res.status(200).json(event);
+    // Simplify attendees to only include userID and fullName
+    const simplifiedAttendees = event.eventAttendees.map(attendee => ({
+      userID: attendee.user?.userID,
+      fullName: attendee.user?.fullName,
+    }));
+
+    // Clone and transform the event object
+    const { eventAttendees, ...restEvent } = event;
+    const transformedEvent = {
+      ...restEvent,
+      eventAttendees: simplifiedAttendees,
+    };
+
+    res.status(200).json({
+      message: "success",
+      data: transformedEvent,
+    });
   } catch (error) {
     console.error("Error fetching event:", error);
     res.status(500).json({
@@ -224,6 +246,7 @@ const getEventByID = async (req, res) => {
 
 //As a user, I want to join an event so that I can participate in it.
 const joinEventByID = async (req, res) => {
+  console.log("join event");
   const userID = req.user.sub;
   const { eventID } = req.params;
 
@@ -260,7 +283,7 @@ const joinEventByID = async (req, res) => {
       user,
       event,
       joinedAt: new Date(),
-      rsvpStatus: "going",
+      rsvpStatus: true,
     });
     await eventAttendeesRepository.save(eventAttendee);
 
@@ -335,7 +358,9 @@ const leaveEventByID = async (req, res) => {
 //As a user, I want to view all events that I have joined so that I can manage them.
 const getMyJoinedEvents = async (req, res) => {
   const userID = req.user.sub;
+
   try {
+
     const events = await eventAttendeesRepository.find({
       where: { user: { userID } },
       relations: ["event"],
@@ -343,9 +368,12 @@ const getMyJoinedEvents = async (req, res) => {
 
     const joinedEvents = events.map((attendee) => attendee.event);
     if (joinedEvents.length === 0) {
-      return res.status(404).json({ message: "No joined events found" });
+      return res.status(200).json({ message: "No joined events found", data: [] });
     }
-    res.status(200).json(joinedEvents);
+    res.status(200).json({
+      message: "success",
+      data: joinedEvents,
+    });
   } catch (error) {
     console.error("Error fetching joined events:", error);
     res.status(500).json({
@@ -366,4 +394,5 @@ module.exports = {
   joinEventByID,
   getEventAttendeesByID,
   leaveEventByID,
+  getMyJoinedEvents
 };

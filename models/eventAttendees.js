@@ -2,7 +2,7 @@ const { EntitySchema } = require("typeorm");
 
 const EventAttendees = new EntitySchema({
   name: "EventAttendees",
-  tableName: "eventAttendees",
+  tableName: "eventattendees",
   columns: {
     eventID: {
       type: "uuid",

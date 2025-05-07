@@ -29,6 +29,9 @@ const Event = new EntitySchema({
     category: {
       type: "text",
     },
+    bannerURL: {
+      type: "text",
+    },
     createdAt: {
       type: "timestamp with time zone",
       createDate: true,

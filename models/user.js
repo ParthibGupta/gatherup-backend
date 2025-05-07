@@ -7,12 +7,16 @@ const User = new EntitySchema({
     userID: {
       type: "uuid",
       primary: true,
-      generated: "uuid",
     },
     userName: {
       type: "text",
       nullable: false,
       unique: true,
+    },
+    fullName: {
+      type: "text",
+      nullable: false,
+      unique: false,
     },
     email: {
       type: "text",
