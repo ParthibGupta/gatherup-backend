@@ -19,14 +19,16 @@ AppDataSource.initialize()
 
 // Routes
 const indexRouter = require("./routes/index");
-const usersRouter = require("./routes/users");
+const userRouter = require("./routes/user");
 const eventsRouter = require("./routes/events");
 const invitesRouter = require("./routes/invites");
 const notificationsRouter = require("./routes/notifications");
 const waitlistRouter = require("./routes/waitlists");
 
 app.use("/", indexRouter);
-app.use("/users", usersRouter);
+app.use("/user", userRouter);
+app.use("/events", eventsRouter);
+
 
 // Error handling
 app.use((err, req, res, next) => {

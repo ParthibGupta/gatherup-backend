@@ -383,7 +383,7 @@ components:
           type: string
         userID:
           type: string
-        eventID:
+        id:
           type: string
         description:
           type: string
@@ -393,7 +393,7 @@ components:
         createdAt:
           type: string
           format: date-time
-      required: [userID, eventID, description, type, createdAt]
+      required: [userID, id, description, type, createdAt]
 
     Invite:
       type: object
@@ -404,7 +404,7 @@ components:
           type: string
         receiverID:
           type: string
-        eventID:
+        id:
           type: string
         status:
           type: string
@@ -412,7 +412,7 @@ components:
         createdAt:
           type: string
           format: date-time
-      required: [senderID, receiverID, eventID, status, createdAt]
+      required: [senderID, receiverID, id, status, createdAt]
 
     Waitlist:
       type: object
@@ -421,19 +421,19 @@ components:
           type: string
         userID:
           type: string
-        eventID:
+        id:
           type: string
         joinedAt:
           type: string
           format: date-time
-      required: [userID, eventID, joinedAt]
+      required: [userID, id, joinedAt]
 
     Attendance:
       type: object
       properties:
         userID:
           type: string
-        eventID:
+        id:
           type: string
         joinedAt:
           type: string
@@ -441,4 +441,4 @@ components:
         status:
           type: string
           enum: [attended, missed, cancelled]
-      required: [userID, eventID, joinedAt, status]
+      required: [userID, id, joinedAt, status]
