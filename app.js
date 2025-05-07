@@ -27,6 +27,7 @@ const waitlistRouter = require("./routes/waitlists");
 
 app.use("/", indexRouter);
 app.use("/user", userRouter);
+app.use("/events", eventsRouter);
 
 // Error handling
 app.use((err, req, res, next) => {

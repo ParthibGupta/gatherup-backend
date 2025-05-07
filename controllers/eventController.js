@@ -28,7 +28,7 @@ const createEvent = async (req, res) => {
     if (!organizer) {
       return res.status(404).json({ message: "Organizer not found" });
     }
-
+    
     const event = eventRepository.create({
       name,
       description,
