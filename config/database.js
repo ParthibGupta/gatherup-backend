@@ -18,7 +18,7 @@ const AppDataSource = new DataSource({
   url: process.env.DATABASE_URL,
   synchronize: true,
   logging: true,
-  entities: [path.join(__dirname, "../models/*.js")],
+  // entities: [path.join(__dirname, "../models/*.js")],
 });
 
 module.exports = AppDataSource;
