@@ -40,8 +40,8 @@ app.use((err, req, res, next) => {
 });
 
 const port = process.env.PORT || 8080;
-app.listen(3000, '0.0.0.0', () => {
-  console.log('Server running on port 3000');
+app.listen(port, '0.0.0.0', () => {
+  console.log('Server running on port 8080');
 });
 
 module.exports = app;
