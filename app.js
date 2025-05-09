@@ -24,11 +24,15 @@ const eventsRouter = require("./routes/events");
 const invitesRouter = require("./routes/invites");
 const notificationsRouter = require("./routes/notifications");
 const waitlistRouter = require("./routes/waitlists");
+const emailRouter = require("./routes/email");
+const aiRouter = require("./routes/ai");
+const e = require("express");
 
 app.use("/", indexRouter);
 app.use("/user", userRouter);
 app.use("/events", eventsRouter);
-
+app.use("/ai", aiRouter);
+app.use("/email/", emailRouter);
 
 // Error handling
 app.use((err, req, res, next) => {

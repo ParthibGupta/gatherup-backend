@@ -2,6 +2,8 @@ const AppDataSource = require("../config/database");
 const { Event } = require("../models/event");
 const { User } = require("../models/user");
 const { EventAttendees } = require("../models/eventAttendees");
+const { stat } = require("fs");
+const { sendUpdateEmail } = require("../controllers/emailController");
 
 const eventRepository = AppDataSource.getRepository(Event);
 const userRepository = AppDataSource.getRepository(User);
@@ -140,13 +142,27 @@ const updateMyOrganizedEventByID = async (req, res) => {
       relations: ["organizer"],
     });
 
+    const eventWithAttendees = await eventRepository
+      .createQueryBuilder("event")
+      .leftJoinAndSelect("event.organizer", "organizer")
+      .leftJoinAndSelect("event.eventAttendees", "eventAttendees")
+      .leftJoinAndSelect("eventAttendees.user", "user")
+      .where("event.eventID = :eventID", { eventID })
+      .getOne();
+    
+    const emails = eventWithAttendees.eventAttendees.map(attendee => attendee.user.email);
+
+    const emailResponse = await sendUpdateEmail(emails, eventWithAttendees);
+    console.log(emailResponse);
     res.status(200).json({
+      status: "success",
       message: "Event updated successfully",
       event: updatedEvent,
     });
   } catch (error) {
     console.error("Error updating event:", error);
     res.status(500).json({
+      status: "failed",
       message: "Error updating event",
       error: error.message,
     });
