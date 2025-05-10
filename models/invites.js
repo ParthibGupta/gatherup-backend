@@ -14,11 +14,11 @@ const Invite = new EntitySchema({
       nullable: false,
     },
     senderID: {
-      type: "uuid",
+      type: "text",
       nullable: false,
     },
     receiverID: {
-      type: "uuid",
+      type: "text",
       nullable: false,
     },
     status: {

@@ -43,7 +43,7 @@ exports.getCurrentUser = async (req, res) => {
   }
 };
 
-exports.createUser = async (req, res) => {
+exports.addNewUser = async (req, res) => {
   try {
 
     const { sub, email, userName, fullName } = req.body;
