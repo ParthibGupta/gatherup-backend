@@ -10,7 +10,7 @@ const Notification = new EntitySchema({
       generated: "uuid",
     },
     userID: {
-      type: "uuid",
+      type: "text",
       nullable: false,
     },
     eventID: {

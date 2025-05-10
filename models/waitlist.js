@@ -9,7 +9,7 @@ const Waitlist = new EntitySchema({
       primary: true,
     },
     userID: {
-      type: "uuid",
+      type: "text",
       primary: true,
     },
     createdAt: {

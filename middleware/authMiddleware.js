@@ -57,4 +57,13 @@ const authenticate = (req, res, next) => {
   }
 };
 
-module.exports = authenticate;
+const verifyInternalKey = (req, res, next) => {
+  const apiKey = req.headers["x-api-key"];
+  if (apiKey === process.env.INTERNAL_API_KEY) {
+    return next();
+  }
+  return res.status(403).json({ error: "Forbidden" });
+};
+
+
+module.exports = {authenticate, verifyInternalKey};
