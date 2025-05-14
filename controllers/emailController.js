@@ -24,9 +24,9 @@ async function sendUpdateEmail(recepients, event) {
     };
 
     const data = await mg.messages.create(
-      "sandbox9198cbb9ce624ae5add41aff1df7a080.mailgun.org",
+     "gatherup.club",
       {
-        from: "Mailgun Sandbox <postmaster@sandbox9198cbb9ce624ae5add41aff1df7a080.mailgun.org>",
+        from: "Gather Up <events@gatherup.club>",
         to: recepients,
         subject: "Changes For An Upcoming Event",
         template: "eventupdate",
