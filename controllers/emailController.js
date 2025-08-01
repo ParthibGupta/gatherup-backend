@@ -55,4 +55,46 @@ const sendEventUpdateBulkEmail = async (req, res) => {
   }
 };
 
-module.exports = { sendEventUpdateBulkEmail, sendUpdateEmail };
+const sendToEventOrganizer = async (req, res) => {
+  const { attendee, organizer, message, event } = req.body;
+  const formattedEventDate = format(new Date(event.eventDate), "EEEE, MMMM do, yyyy, h:mm a");
+
+  if(!event) {
+    return res.status(400).json({ status: "failed", message: "Event not found" });
+  }
+
+  try {
+    const mailgunVariables = {
+    event_name: event.name,
+      event_date: formattedEventDate, 
+      event_location: event.locationTitle,
+      organizer_name: event.organizer.fullName,
+      imageURL: event.bannerURL,
+      event_url: "https://gatherup.club/events/" + event.eventID,
+      update_message: `
+      You have received a message from ${attendee.fullName}.
+      Message: ${message}
+      `,
+    };
+
+    const data = await mg.messages.create(
+      "gatherup.club",
+      {
+        from: "Gather Up <events@gatherup.club>",
+        to: organizer.email,
+        subject: "Changes For An Upcoming Event",
+        template: "eventupdate",
+        "h:X-Mailgun-Variables": JSON.stringify(mailgunVariables),
+      }
+    );
+    if(data) {
+      console.log(data);
+      res.status(200).json({ status: "success", message: "Email sent successfully" });
+    }
+  }catch (error) {
+    console.error("Error sending email:", error);
+    return res.status(500).json({ status: "failed", message: "Failed to send email" });
+  }
+}
+
+module.exports = { sendEventUpdateBulkEmail, sendUpdateEmail, sendToEventOrganizer };

@@ -32,7 +32,7 @@ app.use("/", indexRouter);
 app.use("/user", userRouter);
 app.use("/events", eventsRouter);
 app.use("/ai", aiRouter);
-app.use("/email/", emailRouter);
+app.use("/email", emailRouter);
 
 // Error handling
 app.use((err, req, res, next) => {

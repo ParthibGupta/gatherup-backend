@@ -238,6 +238,7 @@ const getEventByID = async (req, res) => {
     const simplifiedAttendees = event.eventAttendees.map(attendee => ({
       userID: attendee.user?.userID,
       fullName: attendee.user?.fullName,
+      email: attendee.user?.email,
     }));
 
     // Clone and transform the event object
