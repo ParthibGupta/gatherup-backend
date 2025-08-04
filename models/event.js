@@ -32,6 +32,20 @@ const Event = new EntitySchema({
     bannerURL: {
       type: "text",
     },
+    ticketingEnabled: {
+      type: "boolean",
+      default: false,
+    },
+    ticketPrice: {
+      type: "decimal",
+      precision: 10,
+      scale: 2,
+      nullable: true,
+    },
+    requiresApproval: {
+      type: "boolean",
+      default: false,
+    },
     createdAt: {
       type: "timestamp with time zone",
       createDate: true,
@@ -60,6 +74,11 @@ const Event = new EntitySchema({
     notifications: {
       type: "one-to-many",
       target: "Notification",
+      inverseSide: "event",
+    },
+    tickets: {
+      type: "one-to-many",
+      target: "Ticket",
       inverseSide: "event",
     },
   },

@@ -26,22 +26,29 @@ const notificationsRouter = require("./routes/notifications");
 const waitlistRouter = require("./routes/waitlists");
 const emailRouter = require("./routes/email");
 const aiRouter = require("./routes/ai");
+const ticketsRouter = require("./routes/tickets");
+const templatesRouter = require("./routes/templates");
 const e = require("express");
+
+// Static files
+app.use(express.static(path.join(__dirname, "public")));
 
 app.use("/", indexRouter);
 app.use("/user", userRouter);
 app.use("/events", eventsRouter);
 app.use("/ai", aiRouter);
 app.use("/email", emailRouter);
+app.use("/tickets", ticketsRouter);
+app.use("/templates", templatesRouter);
 
 // Error handling
 app.use((err, req, res, next) => {
   res.status(500).json({ error: "Internal Server Error" });
 });
 
-const port = process.env.PORT || 8080;
-app.listen(8080, '0.0.0.0', () => {
-  console.log('Server running on port 8080');
+const port = process.env.PORT || 8081;
+app.listen(port, "0.0.0.0", () => {
+  console.log(`Server running on port ${port}`);
 });
 
 module.exports = app;

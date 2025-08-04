@@ -20,6 +20,10 @@ const createEvent = async (req, res) => {
     bannerURL,
     capacity,
     category,
+    ticketingEnabled = false,
+    ticketPrice,
+    requiresApproval = false,
+    maxTicketsPerUser,
   } = req.body;
 
   try {
@@ -38,6 +42,10 @@ const createEvent = async (req, res) => {
       bannerURL,
       capacity,
       category,
+      ticketingEnabled,
+      ticketPrice: ticketingEnabled ? ticketPrice : null,
+      requiresApproval,
+      maxTicketsPerUser,
       organizer,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -115,6 +123,10 @@ const updateMyOrganizedEventByID = async (req, res) => {
     location,
     capacity,
     category,
+    ticketingEnabled,
+    ticketPrice,
+    requiresApproval,
+    maxTicketsPerUser,
   } = req.body;
 
   try {
@@ -135,6 +147,12 @@ const updateMyOrganizedEventByID = async (req, res) => {
       location,
       capacity,
       category,
+      ...(ticketingEnabled !== undefined && {
+        ticketingEnabled,
+        ticketPrice: ticketingEnabled ? ticketPrice : null,
+        requiresApproval,
+        maxTicketsPerUser,
+      }),
     });
 
     const updatedEvent = await eventRepository.findOne({
@@ -149,8 +167,10 @@ const updateMyOrganizedEventByID = async (req, res) => {
       .leftJoinAndSelect("eventAttendees.user", "user")
       .where("event.eventID = :eventID", { eventID })
       .getOne();
-    
-    const emails = eventWithAttendees.eventAttendees.map(attendee => attendee.user.email);
+
+    const emails = eventWithAttendees.eventAttendees.map(
+      (attendee) => attendee.user.email
+    );
 
     const emailResponse = await sendUpdateEmail(emails, eventWithAttendees);
     console.log(emailResponse);
@@ -221,21 +241,20 @@ const getAllEvents = async (req, res) => {
 const getEventByID = async (req, res) => {
   const { eventID } = req.params;
   try {
-
     const event = await eventRepository
-    .createQueryBuilder("event")
-    .leftJoinAndSelect("event.organizer", "organizer")
-    .leftJoinAndSelect("event.eventAttendees", "eventAttendees")
-    .leftJoinAndSelect("eventAttendees.user", "user")
-    .where("event.eventID = :eventID", { eventID })
-    .getOne();
+      .createQueryBuilder("event")
+      .leftJoinAndSelect("event.organizer", "organizer")
+      .leftJoinAndSelect("event.eventAttendees", "eventAttendees")
+      .leftJoinAndSelect("eventAttendees.user", "user")
+      .where("event.eventID = :eventID", { eventID })
+      .getOne();
 
     if (!event) {
       return res.status(404).json({ message: "Event not found" });
     }
 
     // Simplify attendees to only include userID and fullName
-    const simplifiedAttendees = event.eventAttendees.map(attendee => ({
+    const simplifiedAttendees = event.eventAttendees.map((attendee) => ({
       userID: attendee.user?.userID,
       fullName: attendee.user?.fullName,
       email: attendee.user?.email,
@@ -285,7 +304,9 @@ const joinEventByID = async (req, res) => {
 
     const user = await userRepository.findOneBy({ userID });
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res
+        .status(404)
+        .json({ message: `User not found with id ${userID}` });
     }
 
     const attendeeCount = await eventAttendeesRepository.count({
@@ -303,6 +324,46 @@ const joinEventByID = async (req, res) => {
       rsvpStatus: true,
     });
     await eventAttendeesRepository.save(eventAttendee);
+
+    // If ticketing is enabled, automatically issue a confirmed ticket
+    if (event.ticketingEnabled) {
+      const TicketController = require("./ticketController");
+
+      try {
+        // Create a mock request object for the ticket controller
+        const ticketReq = {
+          params: { eventID },
+          user: { userID },
+          body: {},
+        };
+
+        // Create a mock response object to capture the result
+        const ticketRes = {
+          status: (code) => ({
+            json: (data) => {
+              if (code === 201) {
+                console.log(
+                  "Auto-generated ticket for user:",
+                  data.ticket?.ticketNumber
+                );
+              } else if (code !== 200) {
+                console.error("Error auto-generating ticket:", data);
+              }
+            },
+          }),
+          json: (data) => {
+            // Handle non-status responses
+            console.log("Ticket result:", data.message);
+          },
+        };
+
+        // Call the autoGenerateTicket method
+        await TicketController.autoGenerateTicket(ticketReq, ticketRes);
+      } catch (error) {
+        console.error("Error auto-generating ticket:", error);
+        // Don't fail the event join if ticket creation fails
+      }
+    }
 
     res.status(200).json({
       message: "Successfully joined the event",
@@ -377,7 +438,6 @@ const getMyJoinedEvents = async (req, res) => {
   const userID = req.user.sub;
 
   try {
-
     const events = await eventAttendeesRepository.find({
       where: { user: { userID } },
       relations: ["event"],
@@ -385,7 +445,9 @@ const getMyJoinedEvents = async (req, res) => {
 
     const joinedEvents = events.map((attendee) => attendee.event);
     if (joinedEvents.length === 0) {
-      return res.status(200).json({ message: "No joined events found", data: [] });
+      return res
+        .status(200)
+        .json({ message: "No joined events found", data: [] });
     }
     res.status(200).json({
       message: "success",
@@ -411,5 +473,5 @@ module.exports = {
   joinEventByID,
   getEventAttendeesByID,
   leaveEventByID,
-  getMyJoinedEvents
+  getMyJoinedEvents,
 };

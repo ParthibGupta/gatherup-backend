@@ -72,6 +72,11 @@ const User = new EntitySchema({
       target: "Invite",
       inverseSide: "receiver",
     },
+    tickets: {
+      type: "one-to-many",
+      target: "Ticket",
+      inverseSide: "user",
+    },
   },
 });
 
