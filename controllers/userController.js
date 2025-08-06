@@ -80,3 +80,82 @@ exports.addNewUser = async (req, res) => {
     });
   }
 };
+
+exports.getUserProfile = async (req, res) => {
+  try {
+    const userID = req.user.sub;
+
+    if (!userID) {
+      return res.status(400).json({ error: "User ID (sub) not found in request" });
+    }
+
+    const user = await userRepository.findOneBy({ userID });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.status(201).json({
+      status: "success",
+      data: {
+        id: user.userID,
+        userName: user.userName,
+        fullName: user.fullName,
+        email: user.email,
+        userDescription: user.userDescription,
+        location: user.location,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      },
+    });
+  } catch (error) {
+    console.error("Error retrieving user profile:", error);
+    res.status(500).json({
+      error: "Failed to retrieve user profile",
+      details: error.message,
+    });
+  }
+};
+
+exports.updateUserProfile = async (req, res) => {
+  const userID = req.user.sub;
+  const { userName, fullName, email, userDescription} = req.body;
+  
+  try {
+    if (!userID) {
+      return res.status(400).json({ error: "User ID (sub) not found in request" });
+    }
+
+    const updatedUser = await userRepository.update(userID, {
+      userName,
+      fullName,
+      email,
+      userDescription,
+    });
+    console.log("Updated User:", updatedUser);
+    
+    if (!updatedUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        id: updatedUser.userID,
+        userName: updatedUser.userName,
+        fullName: updatedUser.fullName,
+        email: updatedUser.email,
+        userDescription: updatedUser.userDescription,
+        location: updatedUser.location,
+        createdAt: updatedUser.createdAt,
+        updatedAt: updatedUser.updatedAt,
+      },
+    });
+  } catch (error) {
+    console.error("Error updating user profile:", error);
+    res.status(500).json({
+      error: "Failed to update user profile",
+      details: error.message,
+    });
+  }
+};
