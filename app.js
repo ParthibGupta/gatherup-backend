@@ -33,6 +33,7 @@ app.use("/user", userRouter);
 app.use("/events", eventsRouter);
 app.use("/ai", aiRouter);
 app.use("/email/", emailRouter);
+app.use("/notification", notificationsRouter);
 
 // Error handling
 app.use((err, req, res, next) => {
