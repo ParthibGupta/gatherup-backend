@@ -1,15 +1,45 @@
 openapi: 3.0.3
 info:
-  title: Event Management API
+  title: GatherUp Event Management API
   version: 1.0.0
-  description: API for managing events, notifications, invites, waitlists, and attendance.
+  description: API for managing events, users, tickets, AI services, and email notifications.
+  contact:
+    name: GatherUp Team
+    url: https://gatherup.club
 servers:
-  - url: https://api.example.com/v1
+  - url: https://gatherup-backend.fly.dev
+    description: Production server
+  - url: http://localhost:8080
+    description: Development server
+
+security:
+  - BearerAuth: []
 
 paths:
+  /:
+    get:
+      summary: API health check
+      tags:
+        - General
+      security: []
+      responses:
+        "200":
+          description: API is running
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  title:
+                    type: string
+                    example: "GatherUp API"
+
   /events:
     get:
       summary: Get all events
+      tags:
+        - Events
+      security: []
       responses:
         "200":
           description: A list of events
@@ -18,43 +48,51 @@ paths:
               schema:
                 type: object
                 properties:
-                  status:
+                  message:
                     type: string
-                    enum: [success, failed]
-                  data:
+                    example: "success"
+                  events:
                     type: array
                     items:
                       $ref: "#/components/schemas/Event"
 
     post:
       summary: Create a new event
+      tags:
+        - Events
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Event"
+              $ref: "#/components/schemas/CreateEventRequest"
       responses:
         "201":
-          description: Event created
+          description: Event created successfully
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  status:
+                  message:
                     type: string
-                    enum: [success, failed]
+                    example: "Event created successfully"
+                  event:
+                    $ref: "#/components/schemas/Event"
 
-  /events/{id}:
+  /events/{eventID}:
     get:
       summary: Get an event by ID
+      tags:
+        - Events
+      security: []
       parameters:
         - in: path
-          name: id
+          name: eventID
           required: true
           schema:
             type: string
+            format: uuid
       responses:
         "200":
           description: Event details
@@ -63,382 +101,909 @@ paths:
               schema:
                 type: object
                 properties:
+                  message:
+                    type: string
+                    example: "success"
+                  data:
+                    $ref: "#/components/schemas/EventWithAttendees"
+
+  /events/join/{eventID}:
+    post:
+      summary: Join an event
+      tags:
+        - Events
+      parameters:
+        - in: path
+          name: eventID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Successfully joined the event
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Successfully joined the event"
+
+  /events/update/{eventID}:
+    put:
+      summary: Update an event (organizer only)
+      tags:
+        - Events
+      parameters:
+        - in: path
+          name: eventID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEventRequest"
+      responses:
+        "200":
+          description: Event updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
                   status:
                     type: string
-                    enum: [success, failed]
-                  data:
+                    example: "success"
+                  message:
+                    type: string
+                    example: "Event updated successfully"
+                  event:
                     $ref: "#/components/schemas/Event"
 
+  /user:
+    get:
+      summary: Get current user details
+      tags:
+        - Users
+      responses:
+        "200":
+          description: User details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "success"
+                  data:
+                    $ref: "#/components/schemas/User"
+
+    post:
+      summary: Create a new user (internal API key required)
+      tags:
+        - Users
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserRequest"
+      responses:
+        "201":
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User created successfully"
+                  user:
+                    $ref: "#/components/schemas/User"
+
+  /user/joinedEvents:
+    get:
+      summary: Get events joined by current user
+      tags:
+        - Users
+      responses:
+        "200":
+          description: List of joined events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "success"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Event"
+
+  /user/organizedEvents:
+    get:
+      summary: Get events organized by current user
+      tags:
+        - Users
+      responses:
+        "200":
+          description: List of organized events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "success"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Event"
+
+  /ai/description:
+    post:
+      summary: Generate AI-enhanced event description
+      tags:
+        - AI Services
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Event name
+                description:
+                  type: string
+                  description: Basic event description
+              required:
+                - name
+                - description
+      responses:
+        "200":
+          description: Enhanced description generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: string
+                    description: AI-enhanced description
+
+  /email/eventUpdate:
+    post:
+      summary: Send event update email to attendees
+      tags:
+        - Email
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                recipients:
+                  type: array
+                  items:
+                    type: string
+                    format: email
+                event:
+                  $ref: "#/components/schemas/Event"
+              required:
+                - recipients
+                - event
+      responses:
+        "200":
+          description: Email sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "Email sent successfully"
+
+  /email/contactOrganizer:
+    post:
+      summary: Send message to event organizer
+      tags:
+        - Email
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                attendee:
+                  $ref: "#/components/schemas/User"
+                organizer:
+                  $ref: "#/components/schemas/User"
+                message:
+                  type: string
+                event:
+                  $ref: "#/components/schemas/Event"
+              required:
+                - attendee
+                - organizer
+                - message
+                - event
+      responses:
+        "200":
+          description: Message sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "Email sent successfully"
+
+  /tickets/events/{eventID}/tickets:
+    post:
+      summary: Purchase/Request a ticket for an event
+      tags:
+        - Tickets
+      parameters:
+        - in: path
+          name: eventID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "201":
+          description: Ticket purchased/requested successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  ticket:
+                    $ref: "#/components/schemas/Ticket"
+
+    get:
+      summary: Get tickets for an event (organizers only)
+      tags:
+        - Tickets
+      parameters:
+        - in: path
+          name: eventID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Event tickets retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Event tickets retrieved successfully"
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: object
+                    properties:
+                      summary:
+                        $ref: "#/components/schemas/TicketSummary"
+                      tickets:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/TicketWithUser"
+
+  /tickets/my-tickets:
+    get:
+      summary: Get current user's tickets
+      tags:
+        - Tickets
+      responses:
+        "200":
+          description: User tickets retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User tickets retrieved successfully"
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: object
+                    properties:
+                      tickets:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/TicketWithEvent"
+
+  /tickets/verify/{ticketNumber}:
+    get:
+      summary: Verify a ticket for check-in
+      tags:
+        - Tickets
+      security: []
+      parameters:
+        - in: path
+          name: ticketNumber
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Ticket is valid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                    example: true
+                  ticket:
+                    $ref: "#/components/schemas/VerifiedTicket"
+
+  /tickets/use/{ticketNumber}:
+    post:
+      summary: Use a ticket for check-in
+      tags:
+        - Tickets
+      security: []
+      parameters:
+        - in: path
+          name: ticketNumber
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Ticket used successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Ticket used successfully"
+                  ticket:
+                    type: object
+                    properties:
+                      ticketNumber:
+                        type: string
+                      usedAt:
+                        type: string
+                        format: date-time
+                      user:
+                        type: string
+
+  /tickets/tickets/{ticketID}/revoke:
+    post:
+      summary: Revoke a ticket
+      tags:
+        - Tickets
+      parameters:
+        - in: path
+          name: ticketID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        "200":
+          description: Ticket revoked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Ticket revoked successfully"
+                  ticketNumber:
+                    type: string
+
+  /tickets/tickets/{ticketID}/approve:
+    post:
+      summary: Approve or reject a ticket
+      tags:
+        - Tickets
+      parameters:
+        - in: path
+          name: ticketID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                action:
+                  type: string
+                  enum: [approve, reject]
+              required:
+                - action
+      responses:
+        "200":
+          description: Ticket processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  ticketNumber:
+                    type: string
+                  pdfUrl:
+                    type: string
+                    description: PDF URL (only for approved tickets)
+
+  /templates/ticket:
+    get:
+      summary: Get ticket template for editing
+      tags:
+        - Templates
+      responses:
+        "200":
+          description: Ticket template retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Ticket template retrieved successfully"
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: object
+                    properties:
+                      template:
+                        type: string
+                        description: HTML template content
+
     put:
-      summary: Update an event by ID
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
+      summary: Update ticket template
+      tags:
+        - Templates
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Event"
+              type: object
+              properties:
+                template:
+                  type: string
+                  description: HTML template content
+              required:
+                - template
       responses:
         "200":
-          description: Event updated
+          description: Template updated successfully
           content:
             application/json:
               schema:
                 type: object
                 properties:
+                  message:
+                    type: string
+                    example: "Ticket template updated successfully"
                   status:
                     type: string
-                    enum: [success, failed]
+                    example: "success"
 
-    delete:
-      summary: Delete an event by ID
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-      responses:
-        "204":
-          description: Event deleted
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    enum: [success, failed]
-
-  /notifications:
+  /templates/ticket/preview:
     get:
-      summary: Get all notifications
+      summary: Preview ticket template with sample data
+      tags:
+        - Templates
+      security: []
       responses:
         "200":
-          description: A list of notifications
+          description: Template preview
           content:
-            application/json:
+            text/html:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    enum: [success, failed]
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Notification"
+                type: string
 
+  /templates/ticket/restore:
     post:
-      summary: Create a notification
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Notification"
-      responses:
-        "201":
-          description: Notification created
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    enum: [success, failed]
-
-  /notifications/{id}:
-    get:
-      summary: Get a notification by ID
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
+      summary: Restore ticket template from backup
+      tags:
+        - Templates
       responses:
         "200":
-          description: Notification details
+          description: Template restored successfully
           content:
             application/json:
               schema:
                 type: object
                 properties:
+                  message:
+                    type: string
+                    example: "Ticket template restored from backup successfully"
                   status:
                     type: string
-                    enum: [success, failed]
-                  data:
-                    $ref: "#/components/schemas/Notification"
-
-    delete:
-      summary: Delete a notification
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-      responses:
-        "204":
-          description: Notification deleted
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    enum: [success, failed]
-
-  /invites:
-    get:
-      summary: Get all invites
-      responses:
-        "200":
-          description: A list of invites
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    enum: [success, failed]
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Invite"
-
-    post:
-      summary: Send an invite
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Invite"
-      responses:
-        "201":
-          description: Invite created
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    enum: [success, failed]
-
-  /invites/{id}:
-    delete:
-      summary: Delete an invite
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-      responses:
-        "204":
-          description: Invite deleted
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    enum: [success, failed]
-
-  /waitlist:
-    get:
-      summary: Get all waitlist entries
-      responses:
-        "200":
-          description: A list of waitlist entries
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    enum: [success, failed]
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Waitlist"
-
-    post:
-      summary: Add to waitlist
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Waitlist"
-      responses:
-        "201":
-          description: Waitlist entry created
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    enum: [success, failed]
-
-  /attendance:
-    get:
-      summary: Get all attendance records
-      responses:
-        "200":
-          description: A list of attendance records
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    enum: [success, failed]
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Attendance"
-
-    post:
-      summary: Record event attendance
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Attendance"
-      responses:
-        "201":
-          description: Attendance recorded
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    enum: [success, failed]
+                    example: "success"
 
 components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+
   schemas:
     Event:
       type: object
       properties:
-        id:
+        eventID:
           type: string
+          format: uuid
         name:
           type: string
         description:
           type: string
-        date:
+        eventDate:
           type: string
           format: date-time
         locationTitle:
           type: string
         location:
-          type: array
-          items:
-            type: number
+          type: string
+        bannerURL:
+          type: string
+          format: uri
         capacity:
           type: integer
+          minimum: 1
+        category:
+          type: string
+        ticketingEnabled:
+          type: boolean
+          default: false
+        ticketPrice:
+          type: number
+          format: decimal
+          nullable: true
+        requiresApproval:
+          type: boolean
+          default: false
+        maxTicketsPerUser:
+          type: integer
+          nullable: true
+        organizer:
+          type: string
+          description: User ID of the organizer
         createdAt:
           type: string
           format: date-time
-        category:
+        updatedAt:
           type: string
-        organizerID:
-          type: string
+          format: date-time
       required:
-        [
-          name,
-          date,
-          locationTitle,
-          location,
-          capacity,
-          createdAt,
-          category,
-          organizerID,
-        ]
+        - name
+        - eventDate
+        - locationTitle
+        - location
+        - capacity
+        - category
+        - organizer
 
-    Notification:
+    EventWithAttendees:
+      allOf:
+        - $ref: "#/components/schemas/Event"
+        - type: object
+          properties:
+            eventAttendees:
+              type: array
+              items:
+                type: object
+                properties:
+                  userID:
+                    type: string
+                  fullName:
+                    type: string
+                  email:
+                    type: string
+                    format: email
+
+    CreateEventRequest:
       type: object
       properties:
-        id:
-          type: string
-        userID:
-          type: string
-        id:
+        name:
           type: string
         description:
           type: string
-        type:
+        eventDate:
           type: string
-          enum: [invite, update]
+          format: date-time
+        locationTitle:
+          type: string
+        location:
+          type: string
+        bannerURL:
+          type: string
+          format: uri
+        capacity:
+          type: integer
+          minimum: 1
+        category:
+          type: string
+        ticketingEnabled:
+          type: boolean
+          default: false
+        ticketPrice:
+          type: number
+          format: decimal
+        requiresApproval:
+          type: boolean
+          default: false
+        maxTicketsPerUser:
+          type: integer
+      required:
+        - name
+        - eventDate
+        - locationTitle
+        - location
+        - capacity
+        - category
+
+    UpdateEventRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        eventDate:
+          type: string
+          format: date-time
+        locationTitle:
+          type: string
+        location:
+          type: string
+        capacity:
+          type: integer
+          minimum: 1
+        category:
+          type: string
+        ticketingEnabled:
+          type: boolean
+        ticketPrice:
+          type: number
+          format: decimal
+        requiresApproval:
+          type: boolean
+        maxTicketsPerUser:
+          type: integer
+
+    User:
+      type: object
+      properties:
+        userID:
+          type: string
+        email:
+          type: string
+          format: email
+        fullName:
+          type: string
+        userName:
+          type: string
         createdAt:
           type: string
           format: date-time
-      required: [userID, id, description, type, createdAt]
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - userID
+        - email
+        - fullName
 
-    Invite:
+    CreateUserRequest:
       type: object
       properties:
-        id:
+        sub:
           type: string
-        senderID:
+          description: AWS Cognito user ID
+        email:
           type: string
-        receiverID:
+          format: email
+        userName:
           type: string
-        id:
+        fullName:
+          type: string
+      required:
+        - sub
+        - email
+
+    Ticket:
+      type: object
+      properties:
+        ticketID:
+          type: string
+          format: uuid
+        ticketNumber:
           type: string
         status:
           type: string
-          enum: [pending, accepted, declined]
-        createdAt:
+          enum: [pending, confirmed, used, revoked, cancelled]
+        pdfUrl:
           type: string
-          format: date-time
-      required: [senderID, receiverID, id, status, createdAt]
+          format: uri
+          nullable: true
 
-    Waitlist:
+    TicketWithUser:
+      allOf:
+        - $ref: "#/components/schemas/Ticket"
+        - type: object
+          properties:
+            purchaseDate:
+              type: string
+              format: date-time
+            usedAt:
+              type: string
+              format: date-time
+              nullable: true
+            revokedAt:
+              type: string
+              format: date-time
+              nullable: true
+            revokedReason:
+              type: string
+              nullable: true
+            user:
+              type: object
+              properties:
+                userID:
+                  type: string
+                fullName:
+                  type: string
+                email:
+                  type: string
+                  format: email
+
+    TicketWithEvent:
+      allOf:
+        - $ref: "#/components/schemas/Ticket"
+        - type: object
+          properties:
+            qrCode:
+              type: string
+            purchaseDate:
+              type: string
+              format: date-time
+            usedAt:
+              type: string
+              format: date-time
+              nullable: true
+            event:
+              type: object
+              properties:
+                eventID:
+                  type: string
+                  format: uuid
+                name:
+                  type: string
+                eventDate:
+                  type: string
+                  format: date-time
+                location:
+                  type: string
+
+    VerifiedTicket:
       type: object
       properties:
-        id:
+        ticketID:
           type: string
-        userID:
+          format: uuid
+        ticketNumber:
           type: string
-        id:
-          type: string
-        joinedAt:
-          type: string
-          format: date-time
-      required: [userID, id, joinedAt]
-
-    Attendance:
-      type: object
-      properties:
-        userID:
-          type: string
-        id:
-          type: string
-        joinedAt:
-          type: string
-          format: date-time
         status:
           type: string
-          enum: [attended, missed, cancelled]
-      required: [userID, id, joinedAt, status]
+          enum: [confirmed, used, revoked, cancelled]
+        user:
+          type: object
+          properties:
+            fullName:
+              type: string
+            email:
+              type: string
+              format: email
+        event:
+          type: object
+          properties:
+            name:
+              type: string
+            eventDate:
+              type: string
+              format: date-time
+
+    TicketSummary:
+      type: object
+      properties:
+        total:
+          type: integer
+        confirmed:
+          type: integer
+        pending:
+          type: integer
+        used:
+          type: integer
+        revoked:
+          type: integer
+
+tags:
+  - name: General
+    description: General API endpoints
+  - name: Events
+    description: Event management operations
+  - name: Users
+    description: User management operations
+  - name: Tickets
+    description: Ticket management operations
+  - name: Templates
+    description: Template management operations
+  - name: AI Services
+    description: AI-powered features
+  - name: Email
+    description: Email notification services
