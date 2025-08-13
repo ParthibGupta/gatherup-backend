@@ -21,6 +21,11 @@ const Notification = new EntitySchema({
       type: "text",
       nullable: false,
     },
+    status: {
+      type: "text",
+      nullable: false,
+      default: "unread",
+    },
     createdAt: {
       type: "timestamp",
       createDate: true,

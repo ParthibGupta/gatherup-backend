@@ -2,8 +2,11 @@ const AppDataSource = require("../config/database");
 const { Event } = require("../models/event");
 const { User } = require("../models/user");
 const { EventAttendees } = require("../models/eventAttendees");
-const { stat } = require("fs");
 const { sendUpdateEmail } = require("../controllers/emailController");
+const {
+  createNotification,
+  createNotificationForAttendees,
+} = require("./notificationController");
 
 const eventRepository = AppDataSource.getRepository(Event);
 const userRepository = AppDataSource.getRepository(User);
@@ -28,7 +31,7 @@ const createEvent = async (req, res) => {
 
   try {
     const organizer = req.user.sub;
-    console.log(organizer);
+
     if (!organizer) {
       return res.status(404).json({ message: "Organizer not found" });
     }
@@ -179,6 +182,11 @@ const updateMyOrganizedEventByID = async (req, res) => {
       message: "Event updated successfully",
       event: updatedEvent,
     });
+
+    await createNotificationForAttendees(
+      eventID,
+      `The event: ${updatedEvent.name} has been updated. Please check the new details.`
+    );
   } catch (error) {
     console.error("Error updating event:", error);
     res.status(500).json({
@@ -282,12 +290,16 @@ const getEventByID = async (req, res) => {
 
 //As a user, I want to join an event so that I can participate in it.
 const joinEventByID = async (req, res) => {
-  console.log("join event");
   const userID = req.user.sub;
   const { eventID } = req.params;
 
   try {
-    const event = await eventRepository.findOne({ where: { eventID } });
+    const event = await eventRepository
+      .createQueryBuilder("event")
+      .leftJoinAndSelect("event.organizer", "organizer")
+      .where("event.eventID = :eventID", { eventID })
+      .getOne();
+
     if (!event) {
       return res.status(404).json({ message: "Event not found" });
     }
@@ -324,6 +336,12 @@ const joinEventByID = async (req, res) => {
       rsvpStatus: true,
     });
     await eventAttendeesRepository.save(eventAttendee);
+
+    await createNotification({
+      userID: event.organizer,
+      eventID: event.eventID,
+      message: `${user.fullName} has joined your event: ${event.name}`,
+    });
 
     // If ticketing is enabled, automatically issue a confirmed ticket
     if (event.ticketingEnabled) {
@@ -392,7 +410,10 @@ const getEventAttendeesByID = async (req, res) => {
       relations: ["user"],
     });
 
-    res.status(200).json(attendees);
+    res.status(200).json({
+      message: "Successfully fetched event attendees",
+      data: attendees,
+    });
   } catch (error) {
     console.error("Error fetching event attendees:", error);
     res.status(500).json({
@@ -407,7 +428,11 @@ const leaveEventByID = async (req, res) => {
   const userID = req.user.sub;
   const { eventID } = req.params;
   try {
-    const event = await eventRepository.findOne({ where: { eventID } });
+    const event = await eventRepository
+      .createQueryBuilder("event")
+      .leftJoinAndSelect("event.organizer", "organizer")
+      .where("event.eventID = :eventID", { eventID })
+      .getOne();
     if (!event) {
       return res.status(404).json({ message: "Event not found" });
     }
@@ -416,11 +441,24 @@ const leaveEventByID = async (req, res) => {
         user: { userID },
         event: { eventID },
       },
+      relations: ["user"],
     });
+    console.log(attendee);
     if (!attendee) {
       return res.status(404).json({ message: "User not attending" });
     }
-    await eventAttendeesRepository.delete(attendee.eventAttendeeID);
+
+    await createNotification({
+      userID: event.organizer,
+      eventID: event.eventID,
+      message: `${attendee.user.fullName} has left your event: ${event.name}`,
+    });
+
+    await eventAttendeesRepository.delete({
+      user: { userID },
+      event: { eventID },
+    });
+
     res.status(200).json({
       message: "Successfully left the event",
     });
